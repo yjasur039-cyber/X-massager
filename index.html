@@ -3,93 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>x ms</title>
+    <title>x ms | Terminal</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { border: 1px solid #0f0; padding: 20px; width: 350px; text-align: center; }
-        input, select, textarea { width: 100%; background: #000; border: 1px solid #0f0; color: #0f0; margin: 10px 0; padding: 5px; box-sizing: border-box; }
-        button { background: #0f0; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        * { box-sizing: border-box; }
+        body { background: #050505; color: #00ff41; font-family: 'Consolas', monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .app-border { border: 2px solid #00ff41; width: 380px; height: 600px; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); }
+        .header { border-bottom: 1px solid #00ff41; padding: 10px; text-align: center; font-size: 1.2em; letter-spacing: 3px; background: rgba(0, 255, 65, 0.1); }
+        .screen { flex: 1; padding: 15px; overflow-y: auto; }
+        input, select, textarea { width: 100%; background: #111; border: 1px solid #00ff41; color: #00ff41; padding: 10px; margin-bottom: 15px; outline: none; }
+        button { width: 100%; background: #00ff41; color: #000; border: none; padding: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #008f11; color: #fff; }
+        .deliverer-btn { border: 1px dashed #00ff41; padding: 15px; cursor: pointer; text-align: center; margin-top: 20px; animation: blink 2s infinite; }
+        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
         .hidden { display: none; }
+        .log { font-size: 0.8em; color: #008f11; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- Ro'yxatdan o'tish -->
-    <div id="auth-screen" class="container">
-        <h2>x ms [LOGIN]</h2>
-        <input type="text" id="username" placeholder="Ism (Username)">
-        <input type="tel" id="phone" placeholder="Telefon raqam">
-        <input type="text" id="tg_id" placeholder="Telegram ID">
-        <input type="email" id="gmail" placeholder="Gmail">
-        <button onclick="login()">KIRISH</button>
+<div class="app-border">
+    <div class="header">X MS v1.0.2</div>
+    
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="screen">
+        <p>> INITIALIZING LOGIN...</p>
+        <input type="text" id="username" placeholder="NAME / CODENAME">
+        <input type="tel" id="phone" placeholder="PHONE (+998...)">
+        <input type="text" id="tg_id" placeholder="TELEGRAM ID">
+        <input type="email" id="gmail" placeholder="GMAIL ADDRESS">
+        <button onclick="saveAndLogin()">ACCESS GRANTED</button>
     </div>
 
-    <!-- Asosiy Messenger -->
-    <div id="main-screen" class="container hidden">
-        <h2 id="user-header"></h2>
-        <div id="deliverer-box" style="border: 1px solid #0f0; padding: 10px; cursor: pointer;" onclick="toggleRoles()">
-            [+] Deliverer (Yetkazuvchi)
-        </div>
+    <!-- MAIN APP -->
+    <div id="main-screen" class="screen hidden">
+        <div id="user-info" class="log"></div>
+        <div class="deliverer-btn" onclick="openMenu()">[ CLICK TO CALL DELIVERER ]</div>
         
-        <div id="roles" class="hidden">
-            <select id="role-select">
-                <option value="boss">For Boss</option>
-                <option value="coder">For Coder</option>
-                <option value="killer">For Killer</option>
-                <option value="spy">For Spy</option>
-                <option value="mr_n0_0ne">For MR_n0_0ne</option>
+        <div id="menu-area" class="hidden">
+            <p style="margin-top:20px;">> SELECT RECIPIENT:</p>
+            <select id="role-select" onchange="showChat()">
+                <option value="">-- SELECT ROLE --</option>
+                <option value="boss">FOR BOSS</option>
+                <option value="coder">FOR CODER</option>
+                <option value="killer">FOR KILLER</option>
+                <option value="spy">FOR SPY</option>
+                <option value="mr_n0_0ne">FOR MR_n0_0ne</option>
             </select>
-            <textarea id="message-text" placeholder="Xabar yozing..."></textarea>
-            <button onclick="sendMessage()">YUBORISH</button>
+            
+            <div id="chat-box" class="hidden">
+                <textarea id="msg-text" rows="4" placeholder="ENTER ENCRYPTED MESSAGE..."></textarea>
+                <button onclick="executeSend()">EXECUTE SEND</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const BOT_TOKEN = "8565651705:AAGcPkBIRk7mGd8OQgNzg-sOcZP2RMyIUfY";
-        // Har bir rol uchun xabar boradigan Chat ID (Buni o'zingiz o'zgartirasiz)
-        const ROLE_IDS = {
-            "boss": "YOUR_TG_ID",
-            "coder": "YOUR_TG_ID",
-            "killer": "YOUR_TG_ID",
-            "spy": "YOUR_TG_ID",
-            "mr_n0_0ne": "YOUR_TG_ID"
+<script>
+    const BOT_TOKEN = "8565651705:AAGcPkBIRk7mGd8OQgNzg-sOcZP2RMyIUfY";
+    // Bu yerga o'zingni ID-ngni yozib qo'y, test qilish uchun
+    const ADMIN_ID = "O'ZINGNI_ID_RAQAMING"; 
+
+    window.onload = function() {
+        const saved = localStorage.getItem('xms_user');
+        if(saved) {
+            showMain(JSON.parse(saved));
+        }
+    }
+
+    function saveAndLogin() {
+        const data = {
+            name: document.getElementById('username').value,
+            phone: document.getElementById('phone').value,
+            tg: document.getElementById('tg_id').value,
+            mail: document.getElementById('gmail').value
         };
+        if(!data.name || !data.phone) return alert("REQUIRED FIELDS EMPTY!");
+        localStorage.setItem('xms_user', JSON.stringify(data));
+        showMain(data);
+    }
 
-        let userData = {};
+    function showMain(user) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('user-info').innerHTML = `AGENT: ${user.name}<br>STATUS: ENCRYPTED`;
+    }
 
-        function login() {
-            userData.name = document.getElementById('username').value;
-            userData.phone = document.getElementById('phone').value;
-            userData.tg = document.getElementById('tg_id').value;
-            
-            if(userData.name && userData.phone) {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('main-screen').classList.remove('hidden');
-                document.getElementById('user-header').innerText = `x ms: ${userData.name}`;
-            }
+    function openMenu() {
+        document.getElementById('menu-area').classList.toggle('hidden');
+    }
+
+    function showChat() {
+        document.getElementById('chat-box').classList.remove('hidden');
+    }
+
+    async function executeSend() {
+        const user = JSON.parse(localStorage.getItem('xms_user'));
+        const role = document.getElementById('role-select').value;
+        const msg = document.getElementById('msg-text').value;
+
+        const report = `📁 X-MS REPORT\n------------------\n👤 FROM: ${user.name}\n📞 TEL: ${user.phone}\n🆔 TG: ${user.tg}\n📧 MAIL: ${user.mail}\n------------------\n🎯 TO: ${role.toUpperCase()}\n💬 MSG: ${msg}`;
+
+        try {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent(report)}`);
+            alert("MESSAGE PURGED AND SENT.");
+            document.getElementById('msg-text').value = "";
+            document.getElementById('menu-area').classList.add('hidden');
+        } catch(e) {
+            alert("CONNECTION FAILED.");
         }
-
-        function toggleRoles() {
-            document.getElementById('roles').classList.toggle('hidden');
-        }
-
-        async function sendMessage() {
-            const role = document.getElementById('role-select').value;
-            const text = document.getElementById('message-text').value;
-            const chatId = ROLE_IDS[role];
-
-            const fullMessage = `🔴 NEW ALERT: ${role.toUpperCase()}\n\nSender: ${userData.name}\nTel: ${userData.phone}\nTG: ${userData.tg}\n\nMessage: ${text}`;
-
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(fullMessage)}`;
-
-            try {
-                await fetch(url);
-                alert("Xabar yetkazildi. Izlar o'chirildi.");
-                document.getElementById('message-text').value = "";
-            } catch (e) {
-                alert("Xatolik!");
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
