@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x ms</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { border: 1px solid #0f0; padding: 20px; width: 350px; text-align: center; }
+        input, select, textarea { width: 100%; background: #000; border: 1px solid #0f0; color: #0f0; margin: 10px 0; padding: 5px; box-sizing: border-box; }
+        button { background: #0f0; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Ro'yxatdan o'tish -->
+    <div id="auth-screen" class="container">
+        <h2>x ms [LOGIN]</h2>
+        <input type="text" id="username" placeholder="Ism (Username)">
+        <input type="tel" id="phone" placeholder="Telefon raqam">
+        <input type="text" id="tg_id" placeholder="Telegram ID">
+        <input type="email" id="gmail" placeholder="Gmail">
+        <button onclick="login()">KIRISH</button>
+    </div>
+
+    <!-- Asosiy Messenger -->
+    <div id="main-screen" class="container hidden">
+        <h2 id="user-header"></h2>
+        <div id="deliverer-box" style="border: 1px solid #0f0; padding: 10px; cursor: pointer;" onclick="toggleRoles()">
+            [+] Deliverer (Yetkazuvchi)
+        </div>
+        
+        <div id="roles" class="hidden">
+            <select id="role-select">
+                <option value="boss">For Boss</option>
+                <option value="coder">For Coder</option>
+                <option value="killer">For Killer</option>
+                <option value="spy">For Spy</option>
+                <option value="mr_n0_0ne">For MR_n0_0ne</option>
+            </select>
+            <textarea id="message-text" placeholder="Xabar yozing..."></textarea>
+            <button onclick="sendMessage()">YUBORISH</button>
+        </div>
+    </div>
+
+    <script>
+        const BOT_TOKEN = "8565651705:AAGcPkBIRk7mGd8OQgNzg-sOcZP2RMyIUfY";
+        // Har bir rol uchun xabar boradigan Chat ID (Buni o'zingiz o'zgartirasiz)
+        const ROLE_IDS = {
+            "boss": "YOUR_TG_ID",
+            "coder": "YOUR_TG_ID",
+            "killer": "YOUR_TG_ID",
+            "spy": "YOUR_TG_ID",
+            "mr_n0_0ne": "YOUR_TG_ID"
+        };
+
+        let userData = {};
+
+        function login() {
+            userData.name = document.getElementById('username').value;
+            userData.phone = document.getElementById('phone').value;
+            userData.tg = document.getElementById('tg_id').value;
+            
+            if(userData.name && userData.phone) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-screen').classList.remove('hidden');
+                document.getElementById('user-header').innerText = `x ms: ${userData.name}`;
+            }
+        }
+
+        function toggleRoles() {
+            document.getElementById('roles').classList.toggle('hidden');
+        }
+
+        async function sendMessage() {
+            const role = document.getElementById('role-select').value;
+            const text = document.getElementById('message-text').value;
+            const chatId = ROLE_IDS[role];
+
+            const fullMessage = `🔴 NEW ALERT: ${role.toUpperCase()}\n\nSender: ${userData.name}\nTel: ${userData.phone}\nTG: ${userData.tg}\n\nMessage: ${text}`;
+
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(fullMessage)}`;
+
+            try {
+                await fetch(url);
+                alert("Xabar yetkazildi. Izlar o'chirildi.");
+                document.getElementById('message-text').value = "";
+            } catch (e) {
+                alert("Xatolik!");
+            }
+        }
+    </script>
+</body>
+</html>
